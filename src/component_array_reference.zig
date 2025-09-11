@@ -6,7 +6,7 @@ const log = std.log;
 
 const ComponentArray = @import("component_array.zig").ComponentArray;
 
-const mainspace = @import("main.zig");
+const mainspace = @import("root.zig");
 
 componentArray: *anyopaque,
 deinit: *const fn (ptr: *anyopaque, allocator: Allocator) void,
