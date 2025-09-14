@@ -10,7 +10,7 @@ const mainspace = @import("root.zig");
 
 componentArray: *anyopaque,
 deinit: *const fn (ptr: *anyopaque, allocator: Allocator) void,
-typeInfo: *fn () std.builtin.type,
+typeInfo: *fn () std.builtin.Type,
 typeSize: *fn () comptime_int,
 setAtID: *const fn (ptr: *anyopaque, allocator: Allocator, id: mainspace.Entity, value: *const anyopaque) void,
 
@@ -36,7 +36,7 @@ pub fn init(comptime Type: type, allocator: Allocator) !Self
     }.deinit,
     .typeInfo = struct
     {
-      fn typeInfo() std.builtin.type
+      fn typeInfo() std.builtin.Type
       {
         return @typeInfo(Type);
       }
