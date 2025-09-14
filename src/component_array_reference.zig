@@ -11,7 +11,7 @@ const mainspace = @import("root.zig");
 componentArray: *anyopaque,
 deinit: *const fn (ptr: *anyopaque, allocator: Allocator) void,
 typeSize: *const fn () usize,
-count: *const fn () usize,
+count: *const fn (ptr: *anyopaque) usize,
 setAtID: *const fn (ptr: *anyopaque, allocator: Allocator, id: mainspace.Entity, value: *const anyopaque) void,
 
 pub fn init(comptime Type: type, allocator: Allocator) !Self
