@@ -10,8 +10,8 @@ const mainspace = @import("root.zig");
 
 componentArray: *anyopaque,
 deinit: *const fn (ptr: *anyopaque, allocator: Allocator) void,
-typeInfo: *fn () std.builtin.Type,
-typeSize: *fn () comptime_int,
+typeSize: *fn () usize,
+count: *fn () usize,
 setAtID: *const fn (ptr: *anyopaque, allocator: Allocator, id: mainspace.Entity, value: *const anyopaque) void,
 
 pub fn init(comptime Type: type, allocator: Allocator) !Self
@@ -34,20 +34,21 @@ pub fn init(comptime Type: type, allocator: Allocator) !Self
         componentArray.instances.deinit(gpa);
       }
     }.deinit,
-    .typeInfo = struct
-    {
-      fn typeInfo() std.builtin.Type
-      {
-        return @typeInfo(Type);
-      }
-    }.typeInfo,
     .typeSize = struct
     {
-      fn typeSize() comptime_int
+      fn typeSize() usize
       {
         return @sizeOf(Type);
       }
     }.typeSize,
+    .count = struct
+    {
+      fn count(ptr: *anyopaque) usize
+      {
+        const componentArray: *ComponentArray(Type) = @ptrCast(@alignCast(ptr));
+        return componentArray.instances.count();
+      }
+    }.count,
     .setAtID = struct
     {
       fn setAtID(ptr: *anyopaque, gpa: Allocator, id: mainspace.Entity, value: *const anyopaque) void
