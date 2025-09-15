@@ -98,23 +98,18 @@ pub fn addEntityComponent(self: *Self, entity: Entity, comptime component: []con
   reference.setAtID(reference.componentArray, self.allocator, entity, @ptrCast(&value));
 }
 
-pub fn addEntity(self: *Self, comptime components: []const []const u8, values: anytype) Entity
+/// components is a struct with member names for component keys and member values for component values
+pub fn addEntity(self: *Self, components: anytype) Entity
 {
-  const EntityValuesType = @TypeOf(values);
-  if (@typeInfo(EntityValuesType) != .@"struct") {
-    @compileError("values expected tuple or struct argument, found " ++ @typeName(EntityValuesType));
+  const ComponentsType = @TypeOf(components);
+  if (@typeInfo(ComponentsType) != .@"struct") {
+    @compileError("values expected tuple or struct argument, found " ++ @typeName(ComponentsType));
   }
-  const entityValuesInfo = @typeInfo(EntityValuesType).@"struct";
+  const entityValuesInfo = @typeInfo(ComponentsType).@"struct";
 
-  inline for (0..components.len) |c|
+  inline for (entityValuesInfo.fields) |field|
   {
-    if (c < entityValuesInfo.fields.len)
-    {
-      self.addEntityComponent(self.nextEntity, components[c], values[c]);
-    } else
-    {
-      self.addEntityComponent(self.nextEntity, components[c], undefined);
-    }
+    self.addEntityComponent(self.nextEntity, field.name, field.defaultValue().?);
   }
 
   self.nextEntity +%= 1;

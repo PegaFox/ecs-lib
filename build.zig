@@ -4,6 +4,8 @@ const std = @import("std");
 // declaratively construct a build graph that will be executed by an external
 // runner.
 pub fn build(b: *std.Build) void {
+    const targetOptions = b.standardTargetOptions(.{});
+    const optimizeOptions = b.standardOptimizeOption(.{});
     // This creates a "module", which represents a collection of source files alongside
     // some compilation options, such as optimization mode and linked system libraries.
     // Every executable or library we compile will be based on one or more modules.
@@ -13,8 +15,8 @@ pub fn build(b: *std.Build) void {
         // In this case the main source file is merely a path, however, in more
         // complicated build scripts, this could be a generated file.
         .root_source_file = b.path("src/root.zig"),
-        .target = b.standardTargetOptions(.{}),
-        .optimize = b.standardOptimizeOption(.{}),
+        .target = targetOptions,
+        .optimize = optimizeOptions,
     });
 
     // Now, we will create a static library based on the module we created above.
@@ -31,10 +33,18 @@ pub fn build(b: *std.Build) void {
     // running `zig build`).
     b.installArtifact(lib);
 
+    const test_mod = b.createModule(.{
+      .root_source_file = b.path("src/tests.zig"),
+
+      .target = targetOptions,
+      .optimize = optimizeOptions,
+    });
+    test_mod.addImport("ecs", lib_mod);
+
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
     const lib_unit_tests = b.addTest(.{
-        .root_module = lib_mod,
+        .root_module = test_mod,
     });
 
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
