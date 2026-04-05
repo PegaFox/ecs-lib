@@ -9,7 +9,7 @@ const ComponentArrayReference = @import("component_array_reference.zig");
 
 const ComponentTable = std.StringHashMapUnmanaged(ComponentArrayReference);
 
-const Entity = @import("entity.zig");
+pub const Entity = @import("entity.zig");
 
 allocator: Allocator,
 componentTable: ComponentTable,
