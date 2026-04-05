@@ -3,13 +3,13 @@ const Self = @This();
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 
-const mainspace = @import("root.zig");
+const Entity = @import("entity.zig");
 
 pub fn ComponentArray(comptime Type: type) type
 {
   return struct
   {
-    instances: std.AutoArrayHashMapUnmanaged(mainspace.Entity, Type) = .empty,
+    instances: std.AutoArrayHashMapUnmanaged(Entity.Unmanaged, Type) = .empty,
   };
 }
 

@@ -6,13 +6,17 @@ const log = std.log;
 
 const ComponentArray = @import("component_array.zig").ComponentArray;
 
-const mainspace = @import("root.zig");
+const Entity = @import("entity.zig");
 
 componentArray: *anyopaque,
 deinit: *const fn (ptr: *anyopaque, allocator: Allocator) void,
 typeSize: *const fn () usize,
 count: *const fn (ptr: *anyopaque) usize,
-setAtID: *const fn (ptr: *anyopaque, allocator: Allocator, id: mainspace.Entity, value: *const anyopaque) void,
+setAtID: *const fn (
+  ptr: *anyopaque,
+  allocator: Allocator,
+  id: Entity.Unmanaged,
+  value: *const anyopaque) void,
 
 pub fn init(comptime Type: type, allocator: Allocator) !Self
 {
@@ -51,7 +55,11 @@ pub fn init(comptime Type: type, allocator: Allocator) !Self
     }.count,
     .setAtID = struct
     {
-      fn setAtID(ptr: *anyopaque, gpa: Allocator, id: mainspace.Entity, value: *const anyopaque) void
+      fn setAtID(
+        ptr: *anyopaque,
+        gpa: Allocator,
+        id: Entity.Unmanaged,
+        value: *const anyopaque) void
       {
         const componentArray: *ComponentArray(Type) = @ptrCast(@alignCast(ptr));
 
@@ -63,5 +71,4 @@ pub fn init(comptime Type: type, allocator: Allocator) !Self
     }.setAtID,
   };
 }
-
 
