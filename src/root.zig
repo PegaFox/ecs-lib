@@ -147,7 +147,7 @@ pub fn addEntityUnmanaged(self: *Self, components: anytype) Entity.Unmanaged
   inline for (entityValuesInfo.fields) |field|
   {
     self.addEntityComponent(
-      self.nextEntity, field.name, field.defaultValue().?
+      self.nextEntity, field.name, @field(components, field.name)
     );
   }
 
