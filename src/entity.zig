@@ -9,7 +9,14 @@ pub const Managed = struct
   id: Unmanaged,
   parent: *ECS,
 
-  pub fn getComponentPtr(
+  /// Deprecated, use getPtr
+  pub const getComponentPtr = getPtr; 
+  /// Deprecated, use get
+  pub const getComponent = get;
+  /// Deprecated, use add
+  pub const addComponent = add;
+  
+  pub fn getPtr(
     self: Self,
     comptime component: []const u8,
     comptime Type: type) ?*Type
@@ -17,7 +24,7 @@ pub const Managed = struct
     return self.parent.getComponentPtr(self.id, component, Type);
   }
   
-  pub fn getComponent(
+  pub fn get(
     self: Self,
     comptime component: []const u8,
     comptime Type: type) ?Type
@@ -25,11 +32,20 @@ pub const Managed = struct
     return self.parent.getComponent(self.id, component, Type);
   }
 
-  pub fn addComponent(
+  pub fn add(
     self: Self,
     comptime component: []const u8,
     value: anytype) void
   {
     self.parent.addEntityComponent(self.id, component, value);
+  }
+  
+  pub fn give(
+    self: Self,
+    newOwner: Unmanaged,
+    comptime component: []const u8,
+    comptime Type: type) ?*Type
+  {
+    return self.parent.moveComponent(self.id, component, type, newOwner);
   }
 };

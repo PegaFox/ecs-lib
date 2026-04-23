@@ -36,6 +36,7 @@ pub fn init(comptime Type: type, allocator: Allocator) !Self
 
         componentArray.instances.clearAndFree(gpa);
         componentArray.instances.deinit(gpa);
+        gpa.destroy(componentArray);
       }
     }.deinit,
     .typeSize = struct

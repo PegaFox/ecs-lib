@@ -35,12 +35,15 @@ pub fn deinit(self: *Self) void
   self.componentTable.deinit(self.allocator);
 }
 
-pub fn componentCount(self: *Self) usize
+/// Returns the number of component types
+pub fn cTypes(self: *Self) usize
 {
   return self.componentTable.count();
 }
 
-pub fn getComponentPtr(
+/// Deprecated, use getPtr
+pub const getComponentPtr = getPtr;
+pub fn getPtr(
   self: *Self,
   entity: Entity.Unmanaged,
   comptime component: []const u8,
@@ -59,7 +62,9 @@ pub fn getComponentPtr(
   }
 }
 
-pub fn getComponent(
+/// Deprecated, use get
+pub const getComponent = get;
+pub fn get(
   self: *Self,
   entity: Entity.Unmanaged,
   comptime component: []const u8,
@@ -76,7 +81,30 @@ pub fn getComponent(
   }
 }
 
-pub fn getComponentArray(
+/// Change ownership of a component from oldOwner to newOwner
+/// Returns a pointer to the component value if it exists, orelse null
+pub fn moveC(
+  self: *Self,
+  oldOwner: Entity.Unmanaged,
+  comptime component: []const u8,
+  comptime Type: type,
+  newOwner: Entity.Unmanaged) ?*Type
+{
+  const reference = self.componentTable.get(component) orelse return null;
+
+  const componentArray: *ComponentArray(Type) =
+    @ptrCast(@alignCast(reference.componentArray));
+
+  const entry = componentArray.instances.getEntry(oldOwner) orelse return null;
+  entry.key_ptr.* = newOwner;
+  componentArray.instances.reIndex() catch return null;
+
+  return entry.value_ptr;
+}
+
+/// Deprecated, use getArr
+pub const getComponentArray = getArr;
+pub fn getArr(
   self: *Self, component: []const u8, comptime Type: type) ?[]Type
 {
   const reference = self.componentTable.get(component);
@@ -92,7 +120,9 @@ pub fn getComponentArray(
   }
 }
 
-pub fn addComponentArray(
+/// Deprecated, use addArr
+pub const addComponentArray = addArr;
+pub fn addArr(
   self: *Self, component: []const u8, comptime Type: type) void
 {
   self.componentTable.putNoClobber(
@@ -107,7 +137,10 @@ pub fn addComponentArray(
     log.err("Failed to add component type \"{s}\" {}", .{component, e});
 }
 
-pub fn addEntityComponent(
+/// Deprecated, use addC
+pub const addEntityComponent = addC;
+/// Adds a new component to entity
+pub fn addC(
   self: *Self,
   entity: Entity.Unmanaged,
   comptime component: []const u8,
@@ -126,13 +159,13 @@ pub fn addEntityComponent(
 }
 
 /// components is a struct with member names for component keys and member values for component values
-pub fn addEntityManaged(self: *Self, components: anytype) Entity.Managed
+pub fn addEntity(self: *Self, components: anytype) Entity.Managed
 {
   return .{.id = self.addEntityUnmanaged(components), .parent = self};
 }
 
 /// components is a struct with member names for component keys and member values for component values
-pub fn addEntityUnmanaged(self: *Self, components: anytype) Entity.Unmanaged
+fn addEntityUnmanaged(self: *Self, components: anytype) Entity.Unmanaged
 {
   const ComponentsType = @TypeOf(components);
   if (@typeInfo(ComponentsType) != .@"struct")
