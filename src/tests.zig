@@ -2,59 +2,110 @@ const std = @import("std");
 
 const ECS = @import("root.zig");
 
+test "tmp"
+{
+  const str = comptime blk:{
+    var buffer: [1024]u8 = undefined;
+
+    var fba = std.heap.FixedBufferAllocator.init(&buffer);
+
+    break:blk try fba.allocator().dupe(u8, "Hi, Grace!");
+  };
+
+  _ = str;
+}
+
 test "initialize entity"
 {
-  var gpa = std.heap.DebugAllocator(.{}).init;
+  const gpa = std.testing.allocator;
 
-  var ecs = ECS.init(gpa.allocator());
+  var ecs = ECS.init(gpa);
   defer ecs.deinit();
   
-  const entity = ecs.addEntityManaged(.{
+  const entity = try ecs.addEntity(.{
     .position = @Vector(2, f32){0.5, 0.5},
     .velocity = @Vector(2, f32){0, 0}
   });
 
-  _ = entity.getComponent("position", @Vector(2, f32)) orelse
-    return error.TestFailure;
-  _ = entity.getComponentPtr("velocity", @Vector(2, f32)) orelse
-    return error.TestFailure;
+  try std.testing.expectEqual(
+    entity.get("position", @Vector(2, f32)),
+    @Vector(2, f32){0.5, 0.5}
+  );
+  try std.testing.expectEqual(
+    entity.get("velocity", @Vector(2, f32)),
+    @Vector(2, f32){0, 0}
+  );
 }
 
 test "add component arrays"
 {
-  var gpa = std.heap.DebugAllocator(.{}).init;
+  const gpa = std.testing.allocator;
 
-  var ecs = ECS.init(gpa.allocator());
+  var ecs = ECS.init(gpa);
   defer ecs.deinit();
   
-  ecs.addComponentArray("position", @Vector(2, f32));
-  ecs.addComponentArray("velocity", @Vector(2, f32));
+  try ecs.addArr("position", @Vector(2, f32));
+  try ecs.addArr("velocity", @Vector(2, f32));
 
-  const entity = ecs.addEntityManaged(.{
+  const entity = try ecs.addEntity(.{
     .position = @Vector(2, f32){0.5, 0.5},
     .velocity = @Vector(2, f32){0, 0}
   });
   _ = entity;
 
-  try std.testing.expect(ecs.componentTable.size == 2);
+  try std.testing.expectEqual(ecs.componentTable.size, 2);
 
-  _ = ecs.getComponentArray("position", @Vector(2, f32)) orelse
-    return error.TestFailure;
+  try std.testing.expectEqualSlices(
+    @Vector(2, f32),
+    ecs.getArr("position", @Vector(2, f32)) orelse
+      return error.TestExpectedNonNull,
+    &.{.{0.5, 0.5}}
+  );
 }
 
 test "initialize blank entity"
 {
-  var gpa = std.heap.DebugAllocator(.{}).init;
+  const gpa = std.testing.allocator;
 
-  var ecs = ECS.init(gpa.allocator());
+  var ecs = ECS.init(gpa);
   defer ecs.deinit();
   
-  const entity = ecs.addEntityManaged(.{});
-  entity.addComponent("position", @Vector(2, f32){0.5, 0.5});
-  entity.addComponent("velocity", @Vector(2, f32){0, 0});
+  const entity = try ecs.addEntity(.{});
+  try entity.add("position", @Vector(2, f32){0.5, 0.5});
+  try entity.add("velocity", @Vector(2, f32){0, 0});
 
-  _ = entity.getComponent("position", @Vector(2, f32)) orelse
-    return error.TestFailure;
-  _ = entity.getComponentPtr("velocity", @Vector(2, f32)) orelse
-    return error.TestFailure;
+  try std.testing.expectEqual(
+    entity.get("position", @Vector(2, f32)),
+    @Vector(2, f32){0.5, 0.5}
+  );
+  try std.testing.expectEqual(
+    entity.get("velocity", @Vector(2, f32)),
+    @Vector(2, f32){0, 0}
+  );
+}
+
+test "error when locked"
+{
+  const gpa = std.testing.allocator;
+
+  var ecs = ECS.init(gpa);
+  defer ecs.deinit();
+
+  try ecs.addArr("position", @Vector(2, f32));
+  
+  // Disallow new component types from being added to the ecs
+  ecs.locked = true;
+
+  const entity = try ecs.addEntity(.{
+    .position = @Vector(2, f32){0.5, 0.5},
+  });
+
+  try std.testing.expectEqual(
+    entity.get("position", @Vector(2, f32)),
+    @Vector(2, f32){0.5, 0.5}
+  );
+  try std.testing.expectError(
+    ECS.Lockable.Locked,
+    entity.add("velocity", @Vector(2, f32){0, 0})
+  );
 }

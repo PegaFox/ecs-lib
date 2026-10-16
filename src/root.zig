@@ -11,13 +11,30 @@ const ComponentTable = std.StringHashMapUnmanaged(ComponentArrayReference);
 
 pub const Entity = @import("entity.zig");
 
+const Archetype = struct
+{
+  // TODO: this
+};
+
+/// If true, functions which would add a new component type return error.Locked
+locked: bool,
+
 allocator: Allocator,
 componentTable: ComponentTable,
+
+/// Maps archetype hashes to their source archetypes
+//archetypes: std.array_hash_map.Auto(u64, Archetype),
+/// Contains indices into the archetypes map
+//archetypeMappings: ComponentArray(usize),
+
 nextEntity: Entity.Unmanaged,
+
+pub const Lockable = error{Locked};
 
 pub fn init(allocator: Allocator) Self
 {
   return .{
+    .locked = false,
     .allocator = allocator,
     .componentTable = ComponentTable.empty,
     .nextEntity = 0,
@@ -41,8 +58,6 @@ pub fn cTypes(self: *Self) usize
   return self.componentTable.count();
 }
 
-/// Deprecated, use getPtr
-pub const getComponentPtr = getPtr;
 pub fn getPtr(
   self: *Self,
   entity: Entity.Unmanaged,
@@ -62,15 +77,14 @@ pub fn getPtr(
   }
 }
 
-/// Deprecated, use get
-pub const getComponent = get;
 pub fn get(
   self: *Self,
   entity: Entity.Unmanaged,
   comptime component: []const u8,
-  comptime Type: type) ?Type
+  comptime Type: type
+  ) ?Type
 {
-  const componentPtr = self.getComponentPtr(entity, component, Type);
+  const componentPtr = self.getPtr(entity, component, Type);
 
   if (componentPtr) |ptr|
   {
@@ -102,8 +116,6 @@ pub fn moveC(
   return entry.value_ptr;
 }
 
-/// Deprecated, use getArr
-pub const getComponentArray = getArr;
 pub fn getArr(
   self: *Self, component: []const u8, comptime Type: type) ?[]Type
 {
@@ -120,11 +132,15 @@ pub fn getArr(
   }
 }
 
-/// Deprecated, use addArr
-pub const addComponentArray = addArr;
+/// Only errors if self.locked == true
 pub fn addArr(
-  self: *Self, component: []const u8, comptime Type: type) void
+  self: *Self, component: []const u8, comptime Type: type) Lockable!void
 {
+  if (self.locked)
+  {
+    return Lockable.Locked;
+  }
+
   self.componentTable.putNoClobber(
     self.allocator,
     component,
@@ -137,19 +153,17 @@ pub fn addArr(
     log.err("Failed to add component type \"{s}\" {}", .{component, e});
 }
 
-/// Deprecated, use addC
-pub const addEntityComponent = addC;
 /// Adds a new component to entity
 pub fn addC(
   self: *Self,
   entity: Entity.Unmanaged,
   comptime component: []const u8,
-  value: anytype) void
+  value: anytype) Lockable!void
 {
   const reference: ComponentArrayReference =
     self.componentTable.get(component) orelse blk:
     {
-      self.addComponentArray(component, @TypeOf(value));
+      try self.addArr(component, @TypeOf(value));
       break :blk self.componentTable.get(component).?;
     };
 
@@ -159,13 +173,14 @@ pub fn addC(
 }
 
 /// components is a struct with member names for component keys and member values for component values
-pub fn addEntity(self: *Self, components: anytype) Entity.Managed
+pub fn addEntity(self: *Self, components: anytype) Lockable!Entity.Managed
 {
-  return .{.id = self.addEntityUnmanaged(components), .parent = self};
+  return .{.id = try self.addEntityUnmanaged(components), .parent = self};
 }
 
 /// components is a struct with member names for component keys and member values for component values
-fn addEntityUnmanaged(self: *Self, components: anytype) Entity.Unmanaged
+fn addEntityUnmanaged(self: *Self, components: anytype)
+  Lockable!Entity.Unmanaged
 {
   const ComponentsType = @TypeOf(components);
   if (@typeInfo(ComponentsType) != .@"struct")
@@ -179,9 +194,7 @@ fn addEntityUnmanaged(self: *Self, components: anytype) Entity.Unmanaged
 
   inline for (entityValuesInfo.fields) |field|
   {
-    self.addEntityComponent(
-      self.nextEntity, field.name, @field(components, field.name)
-    );
+    try self.addC(self.nextEntity, field.name, @field(components, field.name));
   }
 
   self.nextEntity +%= 1;
