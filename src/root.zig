@@ -81,8 +81,7 @@ pub fn get(
   self: *Self,
   entity: Entity.Unmanaged,
   comptime component: []const u8,
-  comptime Type: type
-  ) ?Type
+  comptime Type: type) ?Type
 {
   const componentPtr = self.getPtr(entity, component, Type);
 

@@ -2,19 +2,6 @@ const std = @import("std");
 
 const ECS = @import("root.zig");
 
-test "tmp"
-{
-  const str = comptime blk:{
-    var buffer: [1024]u8 = undefined;
-
-    var fba = std.heap.FixedBufferAllocator.init(&buffer);
-
-    break:blk try fba.allocator().dupe(u8, "Hi, Grace!");
-  };
-
-  _ = str;
-}
-
 test "initialize entity"
 {
   const gpa = std.testing.allocator;

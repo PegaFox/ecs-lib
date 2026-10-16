@@ -9,9 +9,9 @@ const ComponentArray = @import("component_array.zig").ComponentArray;
 const Entity = @import("entity.zig");
 
 componentArray: *anyopaque,
+typeID: []const u8,
 deinit: *const fn (ptr: *anyopaque, allocator: Allocator) void,
 typeSize: *const fn () usize,
-typeID: *const fn () []const u8,
 count: *const fn (ptr: *anyopaque) usize,
 setAtID: *const fn (
   ptr: *anyopaque,
@@ -29,6 +29,7 @@ pub fn init(comptime Type: type, allocator: Allocator) !Self
   .{
     .componentArray = componentPos,
 
+    .typeID = @typeName(Type),
     .deinit = struct
     {
       fn deinit(ptr: *anyopaque, gpa: Allocator) void
@@ -47,13 +48,6 @@ pub fn init(comptime Type: type, allocator: Allocator) !Self
         return @sizeOf(Type);
       }
     }.typeSize,
-    .typeID = struct
-    {
-      fn typeID() []const u8
-      {
-        return @typeName(Type);
-      }
-    }.typeID,
     .count = struct
     {
       fn count(ptr: *anyopaque) usize
