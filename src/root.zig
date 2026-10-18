@@ -148,6 +148,14 @@ pub fn get(
   }
 }
 
+/// Slice may be invalidated after adding/removing an entity's component(s)
+pub fn getCList(self: Self, entity: Entity.Unmanaged) []const []const u8
+{
+  const archetype = self.getArchetype(entity);
+
+  return self.archetypeStorage.items[archetype.startIndex..][0..archetype.len];
+}
+
 /// Change ownership of a component from oldOwner to newOwner
 /// Returns a pointer to the component value if it exists, orelse null
 pub fn moveC(
@@ -254,8 +262,11 @@ pub fn addC(
   const oldArchetype = self.getArchetype(entity);
 
   // Due to how the hashing context works, we need to append to archetype storage before we copy the archetype
-  try self.archetypeStorage.appendSlice(
-    self.allocator,
+  // Reallocate first since we use a slice into the arraylist itself
+  try self.archetypeStorage.ensureUnusedCapacity(
+    self.allocator, oldArchetype.len
+  );
+  self.archetypeStorage.appendSliceAssumeCapacity(
     self.archetypeStorage.items[oldArchetype.startIndex..][0..oldArchetype.len]
   );
   newArchetype.len += oldArchetype.len;

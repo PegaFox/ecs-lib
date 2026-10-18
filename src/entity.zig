@@ -25,6 +25,11 @@ pub const Managed = struct
     return self.parent.get(self.id, component, Type);
   }
 
+  pub fn getCList(self: Self) []const []const u8
+  {
+    return self.parent.getCList(self.id);
+  }
+
   pub fn add(
     self: Self,
     components: anytype) ECS.AddError!void

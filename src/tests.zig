@@ -96,3 +96,21 @@ test "error when locked"
     entity.add(.{.velocity = @Vector(2, f32){0, 0}})
   );
 }
+
+test "check entity archetype"
+{
+  const gpa = std.testing.allocator;
+
+  var ecs = ECS.init(gpa);
+  defer ecs.deinit();
+  
+  const entity = try ecs.addEntity(.{
+    .position = @Vector(2, f32){0.5, 0.5},
+    .velocity = @Vector(2, f32){0, 0}
+  });
+
+  try std.testing.expectEqualDeep(
+    &[_][]const u8{"position", "velocity"}, entity.getCList()
+  );
+}
+
