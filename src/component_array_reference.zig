@@ -13,11 +13,12 @@ typeID: []const u8,
 deinit: *const fn (ptr: *anyopaque, allocator: Allocator) void,
 typeSize: *const fn () usize,
 count: *const fn (ptr: *anyopaque) usize,
+/// Returns if a new element was added
 setAtID: *const fn (
   ptr: *anyopaque,
   allocator: Allocator,
   id: Entity.Unmanaged,
-  value: *const anyopaque) void,
+  value: *const anyopaque) Allocator.Error!bool,
 
 pub fn init(comptime Type: type, allocator: Allocator) !Self
 {
@@ -62,14 +63,18 @@ pub fn init(comptime Type: type, allocator: Allocator) !Self
         ptr: *anyopaque,
         gpa: Allocator,
         id: Entity.Unmanaged,
-        value: *const anyopaque) void
+        value: *const anyopaque) Allocator.Error!bool
       {
         const componentArray: *ComponentArray(Type) = @ptrCast(@alignCast(ptr));
 
         const trueValue: *const Type = @ptrCast(@alignCast(value));
 
-        componentArray.instances.put(gpa, id, trueValue.*) catch |e|
-        log.err("Failed to add component to entity {} {}", .{id, e});
+        if (try componentArray.instances.fetchPut(gpa, id, trueValue.*)) |_|
+        {
+          return false;
+        }
+
+        return true;
       }
     }.setAtID,
   };

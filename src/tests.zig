@@ -58,8 +58,8 @@ test "initialize blank entity"
   defer ecs.deinit();
   
   const entity = try ecs.addEntity(.{});
-  try entity.add("position", @Vector(2, f32){0.5, 0.5});
-  try entity.add("velocity", @Vector(2, f32){0, 0});
+  try entity.add(.{.position = @Vector(2, f32){0.5, 0.5}});
+  try entity.add(.{.velocity = @Vector(2, f32){0, 0}});
 
   try std.testing.expectEqual(
     entity.get("position", @Vector(2, f32)),
@@ -93,6 +93,6 @@ test "error when locked"
   );
   try std.testing.expectError(
     ECS.Lockable.Locked,
-    entity.add("velocity", @Vector(2, f32){0, 0})
+    entity.add(.{.velocity = @Vector(2, f32){0, 0}})
   );
 }

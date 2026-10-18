@@ -11,7 +11,7 @@ pub const Managed = struct
 
   pub fn getPtr(
     self: Self,
-    comptime component: []const u8,
+    component: []const u8,
     comptime Type: type) ?*Type
   {
     return self.parent.getPtr(self.id, component, Type);
@@ -19,7 +19,7 @@ pub const Managed = struct
   
   pub fn get(
     self: Self,
-    comptime component: []const u8,
+    component: []const u8,
     comptime Type: type) ?Type
   {
     return self.parent.get(self.id, component, Type);
@@ -27,16 +27,15 @@ pub const Managed = struct
 
   pub fn add(
     self: Self,
-    comptime component: []const u8,
-    value: anytype) ECS.Lockable!void
+    components: anytype) ECS.AddError!void
   {
-    try self.parent.addC(self.id, component, value);
+    try self.parent.addC(self.id, components);
   }
   
   pub fn give(
     self: Self,
     newOwner: Unmanaged,
-    comptime component: []const u8,
+    component: []const u8,
     comptime Type: type) ?*Type
   {
     return self.parent.moveC(self.id, component, type, newOwner);
