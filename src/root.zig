@@ -190,7 +190,10 @@ pub fn getArr(
     const componentArray: *ComponentArray(Type) =
       @ptrCast(@alignCast(ptr.componentArray));
 
-    return componentArray.instances.values();
+    return .{
+      .entities = componentArray.instances.keys(),
+      .components = componentArray.instances.values(),
+    };
   } else
   {
     return null;

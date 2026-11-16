@@ -38,14 +38,21 @@ test "add component arrays"
     .position = @Vector(2, f32){0.5, 0.5},
     .velocity = @Vector(2, f32){0, 0}
   });
-  _ = entity;
 
   try std.testing.expectEqual(ecs.componentTable.size, 2);
 
+  const positions = 
+    ecs.getArr("position", @Vector(2, f32)) orelse
+      return error.TestExpectedNonNull;
+
+  try std.testing.expectEqualSlices(
+    ECS.Entity.Unmanaged,
+    positions.entities,
+    &.{entity.id}
+  );
   try std.testing.expectEqualSlices(
     @Vector(2, f32),
-    ecs.getArr("position", @Vector(2, f32)) orelse
-      return error.TestExpectedNonNull,
+    positions.components,
     &.{.{0.5, 0.5}}
   );
 }
