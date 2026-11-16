@@ -178,7 +178,11 @@ pub fn moveC(
 }
 
 pub fn getArr(
-  self: *Self, component: []const u8, comptime Type: type) ?[]Type
+  self: *Self, component: []const u8, comptime Type: type) ?struct
+{
+  entities: []Entity.Unmanaged,
+  components: []Type,
+}
 {
   const reference = self.componentTable.get(component);
   if (reference) |ptr|
