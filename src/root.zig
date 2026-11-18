@@ -161,7 +161,7 @@ pub fn getCList(self: Self, entity: Entity.Unmanaged) []const []const u8
 pub fn moveC(
   self: *Self,
   oldOwner: Entity.Unmanaged,
-  comptime component: []const u8,
+  component: []const u8,
   comptime Type: type,
   newOwner: Entity.Unmanaged) ?*Type
 {
@@ -177,8 +177,7 @@ pub fn moveC(
   return entry.value_ptr;
 }
 
-pub fn getArr(
-  self: *Self, component: []const u8, comptime Type: type) ?struct
+pub fn getArr(self: *Self, component: []const u8, comptime Type: type) ?struct
 {
   entities: []Entity.Unmanaged,
   components: []Type,
@@ -304,6 +303,28 @@ pub fn addC(
 pub fn addEntity(self: *Self, components: anytype) AddError!Entity.Managed
 {
   return .{.id = try self.addEntityUnmanaged(components), .parent = self};
+}
+
+pub fn removeEntity(self: *Self, entity: Entity.Unmanaged) void
+{
+  const components = self.getCList(entity);
+
+  for (components) |component|
+  {
+    _ = self.remove(entity, component);
+  }
+}
+
+pub fn remove(self: *Self, entity: Entity.Unmanaged, component: []const u8) bool
+{
+  const reference = self.componentTable.get(component);
+  if (reference) |ptr|
+  {
+    return ptr.removeAtID(ptr.componentArray, entity);
+  } else
+  {
+    return false;
+  }
 }
 
 fn getArchetype(self: Self, entity: Entity.Unmanaged) Archetype

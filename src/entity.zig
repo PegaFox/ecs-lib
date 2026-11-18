@@ -9,18 +9,12 @@ pub const Managed = struct
   id: Unmanaged,
   parent: *ECS,
 
-  pub fn getPtr(
-    self: Self,
-    component: []const u8,
-    comptime Type: type) ?*Type
+  pub fn getPtr(self: Self, component: []const u8, comptime Type: type) ?*Type
   {
     return self.parent.getPtr(self.id, component, Type);
   }
   
-  pub fn get(
-    self: Self,
-    component: []const u8,
-    comptime Type: type) ?Type
+  pub fn get(self: Self, component: []const u8, comptime Type: type) ?Type
   {
     return self.parent.get(self.id, component, Type);
   }
@@ -30,11 +24,19 @@ pub const Managed = struct
     return self.parent.getCList(self.id);
   }
 
-  pub fn add(
-    self: Self,
-    components: anytype) ECS.AddError!void
+  pub fn add(self: Self, components: anytype) ECS.AddError!void
   {
     try self.parent.addC(self.id, components);
+  }
+
+  pub fn remove(self: Self, component: []const u8) bool
+  {
+    return self.parent.remove(self.id, component);
+  }
+
+  pub fn clear(self: Self) void
+  {
+    self.parent.removeEntity(self.id);
   }
   
   pub fn give(

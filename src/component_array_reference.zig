@@ -19,6 +19,10 @@ setAtID: *const fn (
   allocator: Allocator,
   id: Entity.Unmanaged,
   value: *const anyopaque) Allocator.Error!bool,
+/// Swap removes element with id
+/// Invalideates pointers to last array element
+/// Returns if an element was removed
+removeAtID: *const fn (ptr: *anyopaque, id: Entity.Unmanaged) bool,
 
 pub fn init(comptime Type: type, allocator: Allocator) !Self
 {
@@ -77,6 +81,15 @@ pub fn init(comptime Type: type, allocator: Allocator) !Self
         return true;
       }
     }.setAtID,
+    .removeAtID = struct
+    {
+      fn removeAtID(ptr: *anyopaque, id: Entity.Unmanaged) bool
+      {
+        const componentArray: *ComponentArray(Type) = @ptrCast(@alignCast(ptr));
+
+        return componentArray.instances.swapRemove(id);
+      }
+    }.removeAtID,
   };
 }
 
