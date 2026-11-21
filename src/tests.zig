@@ -24,6 +24,28 @@ test "initialize entity"
   );
 }
 
+test "initialize entity with tuple"
+{
+  const gpa = std.testing.allocator;
+
+  var ecs = ECS.init(gpa);
+  defer ecs.deinit();
+  
+  const entity = try ecs.addEntity(.{
+    .{"position", @Vector(2, f32){0.5, 0.5}},
+    .{"velocity", @Vector(2, f32){0, 0}}
+  });
+
+  try std.testing.expectEqual(
+    entity.get("position", @Vector(2, f32)),
+    @Vector(2, f32){0.5, 0.5}
+  );
+  try std.testing.expectEqual(
+    entity.get("velocity", @Vector(2, f32)),
+    @Vector(2, f32){0, 0}
+  );
+}
+
 test "add component arrays"
 {
   const gpa = std.testing.allocator;

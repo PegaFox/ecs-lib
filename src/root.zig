@@ -202,7 +202,7 @@ pub fn getArr(self: *Self, component: []const u8, comptime Type: type) ?struct
 /// Only errors if self.locked == true
 pub fn addArr(
   self: *Self,
-  comptime component: []const u8,
+  component: []const u8,
   comptime Type: type) Lockable!void
 {
   if (self.locked)
@@ -225,6 +225,9 @@ pub fn addArr(
 pub const AddError = Lockable || Allocator.Error;
 /// Adds new components to entity
 /// Recalculates entity's archetype
+/// Components is a struct with string or integer field names
+/// If a field name is a string, that name is used as the component name and the value as the component value
+/// If a field name is an integer, the field value must be a tuple with the name and value of the component
 pub fn addC(
   self: *Self,
   entity: Entity.Unmanaged,
@@ -245,14 +248,22 @@ pub fn addC(
   };
   inline for (entityValuesInfo.fields) |fieldInfo|
   {
-    const reference: ComponentArrayReference =
-      self.componentTable.get(fieldInfo.name) orelse blk:
-      {
-        try self.addArr(fieldInfo.name, fieldInfo.type);
-        break :blk self.componentTable.get(fieldInfo.name).?;
+    const name: []const u8, const value =
+      if (std.mem.findNone(u8, fieldInfo.name, "0123456789") != null)
+        .{fieldInfo.name, @field(components, fieldInfo.name)}
+      else .{
+        @field(components, fieldInfo.name)[0],
+        @field(components, fieldInfo.name)[1]
       };
 
-    const field = @field(components, fieldInfo.name);
+    const reference: ComponentArrayReference =
+      self.componentTable.get(name) orelse blk:
+      {
+        try self.addArr(name, @TypeOf(value));
+        break :blk self.componentTable.get(name).?;
+      };
+
+    const field = @field(components, name);
 
     if (try reference.setAtID(
       reference.componentArray,
@@ -260,7 +271,7 @@ pub fn addC(
       entity,
       @ptrCast(&field)))
     {
-      try self.archetypeStorage.append(self.allocator, fieldInfo.name);
+      try self.archetypeStorage.append(self.allocator, name);
       newArchetype.len += 1;
     }
   }
@@ -299,7 +310,7 @@ pub fn addC(
   }
 }
 
-/// components is a struct with member names for component keys and member values for component values
+/// See addC for info on components
 pub fn addEntity(self: *Self, components: anytype) AddError!Entity.Managed
 {
   return .{.id = try self.addEntityUnmanaged(components), .parent = self};
@@ -335,7 +346,7 @@ fn getArchetype(self: Self, entity: Entity.Unmanaged) Archetype
   return self.archetypes.entries.items(.key)[index];
 }
 
-/// components is a struct with member names for component keys and member values for component values
+/// See addC for info on components
 fn addEntityUnmanaged(self: *Self, components: anytype)
   AddError!Entity.Unmanaged
 {
