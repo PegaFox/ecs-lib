@@ -249,7 +249,7 @@ pub fn addC(
   inline for (entityValuesInfo.fields) |fieldInfo|
   {
     const name: []const u8, const value =
-      if (std.mem.findNone(u8, fieldInfo.name, "0123456789") != null)
+      if (comptime std.mem.findNone(u8, fieldInfo.name, "0123456789") != null)
         .{fieldInfo.name, @field(components, fieldInfo.name)}
       else .{
         @field(components, fieldInfo.name)[0],
@@ -263,13 +263,11 @@ pub fn addC(
         break :blk self.componentTable.get(name).?;
       };
 
-    const field = @field(components, name);
-
     if (try reference.setAtID(
       reference.componentArray,
       self.allocator,
       entity,
-      @ptrCast(&field)))
+      @ptrCast(&value)))
     {
       try self.archetypeStorage.append(self.allocator, name);
       newArchetype.len += 1;
