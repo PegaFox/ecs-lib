@@ -161,7 +161,7 @@ pub fn moveC(
 
   const entry = componentArray.getEntry(oldOwner) orelse return null;
   entry.key_ptr.* = newOwner;
-  componentArray.reIndex() catch return null;
+  componentArray.reIndex(self.allocator) catch return null;
 
   return entry.value_ptr;
 }
