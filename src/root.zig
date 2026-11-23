@@ -118,17 +118,9 @@ pub fn getPtr(
   component: []const u8,
   comptime Type: type) ?*Type
 {
-  const reference = self.componentTable.get(component);
-  if (reference) |ptr|
-  {
-    const componentArray: *ComponentArray(Type) =
-      @ptrCast(@alignCast(ptr.componentArray));
+  const componentArray = self.getArr(component, Type) orelse return null;
 
-    return componentArray.instances.getPtr(entity);
-  } else
-  {
-    return null;
-  }
+  return componentArray.getPtr(entity);
 }
 
 pub fn get(
@@ -165,23 +157,18 @@ pub fn moveC(
   comptime Type: type,
   newOwner: Entity.Unmanaged) ?*Type
 {
-  const reference = self.componentTable.get(component) orelse return null;
+  const componentArray = self.getArr(component, Type) orelse return null;
 
-  const componentArray: *ComponentArray(Type) =
-    @ptrCast(@alignCast(reference.componentArray));
-
-  const entry = componentArray.instances.getEntry(oldOwner) orelse return null;
+  const entry = componentArray.getEntry(oldOwner) orelse return null;
   entry.key_ptr.* = newOwner;
-  componentArray.instances.reIndex() catch return null;
+  componentArray.reIndex() catch return null;
 
   return entry.value_ptr;
 }
 
-pub fn getArr(self: *Self, component: []const u8, comptime Type: type) ?struct
-{
-  entities: []Entity.Unmanaged,
-  components: []Type,
-}
+/// Access the underlying storage for a component
+pub fn getArr(self: *Self, component: []const u8, comptime Type: type)
+  ?*std.AutoArrayHashMapUnmanaged(Entity.Unmanaged, Type)
 {
   const reference = self.componentTable.get(component);
   if (reference) |ptr|
@@ -189,10 +176,7 @@ pub fn getArr(self: *Self, component: []const u8, comptime Type: type) ?struct
     const componentArray: *ComponentArray(Type) =
       @ptrCast(@alignCast(ptr.componentArray));
 
-    return .{
-      .entities = componentArray.instances.keys(),
-      .components = componentArray.instances.values(),
-    };
+    return &componentArray.instances;
   } else
   {
     return null;

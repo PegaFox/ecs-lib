@@ -69,12 +69,12 @@ test "add component arrays"
 
   try std.testing.expectEqualSlices(
     ECS.Entity.Unmanaged,
-    positions.entities,
+    positions.keys(),
     &.{entity.id}
   );
   try std.testing.expectEqualSlices(
     @Vector(2, f32),
-    positions.components,
+    positions.values(),
     &.{.{0.5, 0.5}}
   );
 }
